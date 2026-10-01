@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Rangers 集結連線</title>
+
+  <style>
+
+    body {
+      margin: 0;
+
+      font-family: Arial, sans-serif;
+
+      background-image: url("images/bg.jpg");
+
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+
+      min-height: 100vh;
+    }
+
+
+    h2 {
+      text-align: center;
+
+      color: white;
+
+      text-shadow: 0 0 5px black;
+
+      margin-top: 20px;
+    }
+
+
+    /* =========================
+       BINGO 卡
+    ========================= */
+
+    table {
+      border-collapse: collapse;
+
+      margin: 20px auto;
+
+      background:
+        rgba(255, 255, 255, 0.85);
+    }
+
+
+    td {
+      width: 100px;
+      height: 100px;
+
+      border: 2px solid #333;
+
+      text-align: center;
+
+      cursor: pointer;
+
+      position: relative;
+
+      overflow: hidden;
+
+      padding: 0;
+    }
+
+
+    td img {
+      width: 100%;
+      height: 100%;
+
+      object-fit: cover;
+
+      display: block;
+    }
+
+
+    /* =========================
+       被選取的格子
+    ========================= */
+
+    .marked::after {
+      content: "✓";
+
+      position: absolute;
+
+      inset: 0;
+
+      background:
+        rgba(0, 255, 100, 0.45);
+
+      color: white;
+
+      font-size: 48px;
+      font-weight: bold;
+
+      display: flex;
+
+      justify-content: center;
+      align-items: center;
+
+      pointer-events: none;
+    }
+
+
+    /* =========================
+       BINGO 狀態
+    ========================= */
+
+#status {
+  text-align: center;
+
+  color: white;
+
+  text-shadow:
+    2px 2px 5px black;
+
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+.bingo-big {
+  font-size: 40px;
+  font-weight: bold;
+  color: #FFD700;
+}
+
+.bingo-small {
+  font-size: 20px;
+  font-weight: normal;
+}
+
+
+    /* =========================
+       換卡按鈕
+    ========================= */
+
+    .button-area {
+      text-align: center;
+
+      margin-top: 20px;
+      padding-bottom: 30px;
+    }
+
+
+    #newCardButton {
+      border: none;
+
+      border-radius: 12px;
+
+      padding: 12px 25px;
+
+      font-size: 25px;
+      font-weight: bold;
+
+      cursor: pointer;
+
+      color: white;
+
+      background: #2563eb;
+
+      box-shadow:
+        0 4px 10px rgba(0,0,0,0.25);
+
+      transition: 0.2s;
+    }
+
+
+    #newCardButton:hover {
+      transform: scale(1.05);
+
+      background: #1d4ed8;
+    }
+
+
+    #newCardButton:active {
+      transform: scale(0.97);
+    }
+
+
+    /* =========================
+       手機版
+    ========================= */
+
+    @media (max-width: 600px) {
+
+  body {
+    height: 100vh;
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  h2 {
+    font-size: 30px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
+
+  table {
+    margin: 8px auto;
+  }
+
+  td {
+    width: 24vw;
+    height: 24vw;
+  }
+
+  .marked::after {
+    font-size: 32px;
+  }
+
+  #status {
+    font-size: 22px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+
+  .bingo-big {
+    font-size: 50px;
+  }
+
+  .bingo-small {
+    font-size: 22px;
+  }
+
+  .button-area {
+    padding-bottom: 5px;
+  }
+
+  #newCardButton {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+}
+
+  </style>
+</head>
+
+
+<body>
+
+
+  <h2>
+    互動式圖片 BINGO
+  </h2>
+
+
+  <!-- BINGO 卡 -->
+
+  <div id="card"></div>
+
+
+  <!-- BINGO 狀態 -->
+
+  <div id="status">
+    尚未達成 BINGO
+  </div>
+
+
+  <!-- 換卡按鈕 -->
+
+  <div class="button-area">
+
+    <button
+      id="newCardButton"
+      onclick="changeBingoCard()"
+    >
+      換一張 BINGO 卡
+    </button>
+
+  </div>
+
+
+
+<script>
+
+
+  /* =============================
+     圖片設定
+     1～40 對應
+     bingo1.jpg ～ bingo40.jpg
+  ============================= */
+
+  const imageMap = {
+
+    1: "images/bingo1.jpg",
+    2: "images/bingo2.jpg",
+    3: "images/bingo3.jpg",
+    4: "images/bingo4.jpg",
+    5: "images/bingo5.jpg",
+
+    6: "images/bingo6.jpg",
+    7: "images/bingo7.jpg",
+    8: "images/bingo8.jpg",
+    9: "images/bingo9.jpg",
+    10: "images/bingo10.jpg",
+
+    11: "images/bingo11.jpg",
+    12: "images/bingo12.jpg",
+    13: "images/bingo13.jpg",
+    14: "images/bingo14.jpg",
+    15: "images/bingo15.jpg",
+
+    16: "images/bingo16.jpg",
+    17: "images/bingo17.jpg",
+    18: "images/bingo18.jpg",
+    19: "images/bingo19.jpg",
+    20: "images/bingo20.jpg",
+
+    21: "images/bingo21.jpg",
+    22: "images/bingo22.jpg",
+    23: "images/bingo23.jpg",
+    24: "images/bingo24.jpg",
+    25: "images/bingo25.jpg",
+
+    26: "images/bingo26.jpg",
+    27: "images/bingo27.jpg",
+    28: "images/bingo28.jpg",
+    29: "images/bingo29.jpg",
+    30: "images/bingo30.jpg",
+
+    31: "images/bingo31.jpg",
+    32: "images/bingo32.jpg",
+    33: "images/bingo33.jpg",
+    34: "images/bingo34.jpg",
+    35: "images/bingo35.jpg",
+
+    36: "images/bingo36.jpg",
+    37: "images/bingo37.jpg",
+    38: "images/bingo38.jpg",
+    39: "images/bingo39.jpg",
+    40: "images/bingo40.jpg"
+
+  };
+
+
+
+  /* =============================
+     隨機排序
+  ============================= */
+
+  function shuffle(array) {
+
+    for (
+      let i = array.length - 1;
+      i > 0;
+      i--
+    ) {
+
+      const j =
+        Math.floor(
+          Math.random() * (i + 1)
+        );
+
+
+      [
+        array[i],
+        array[j]
+      ] = [
+        array[j],
+        array[i]
+      ];
+
+    }
+
+
+    return array;
+
+  }
+
+
+
+  /* =============================
+     產生一張新的隨機卡
+
+     從 1～40 中
+     隨機選 16 個
+  ============================= */
+
+  function createNewCard() {
+
+    let numbers = [];
+
+
+    // 建立 1～40
+    for (
+      let i = 1;
+      i <= 40;
+      i++
+    ) {
+
+      numbers.push(i);
+
+    }
+
+
+    // 隨機排序
+    shuffle(numbers);
+
+
+    // 只取前 16 個
+    const selectedNumbers =
+      numbers.slice(0, 16);
+
+
+    // 儲存這張卡
+    localStorage.setItem(
+      "bingoCard",
+      JSON.stringify(selectedNumbers)
+    );
+
+
+    // 清除之前勾選紀錄
+    localStorage.removeItem(
+      "bingoMarked"
+    );
+
+
+    return selectedNumbers;
+
+  }
+
+
+
+  /* =============================
+     取得目前 BINGO 卡
+
+     如果之前有卡：
+     → 使用原本的
+
+     如果沒有：
+     → 產生新的
+  ============================= */
+
+  function getBingoCard() {
+
+    const savedCard =
+      localStorage.getItem(
+        "bingoCard"
+      );
+
+
+    if (savedCard) {
+
+      return JSON.parse(
+        savedCard
+      );
+
+    }
+
+
+    return createNewCard();
+
+  }
+
+
+
+  /* =============================
+     顯示 BINGO 卡
+  ============================= */
+
+  function displayBingoCard() {
+
+    const numbers =
+      getBingoCard();
+
+
+    /*
+      取得之前已經勾選的格子
+    */
+
+    const markedNumbers =
+      JSON.parse(
+        localStorage.getItem(
+          "bingoMarked"
+        )
+      ) || [];
+
+
+    let html =
+      "<table>";
+
+
+    let index = 0;
+
+
+    for (
+      let row = 0;
+      row < 4;
+      row++
+    ) {
+
+      html += "<tr>";
+
+
+      for (
+        let col = 0;
+        col < 4;
+        col++
+      ) {
+
+        const num =
+          numbers[index];
+
+
+        const imgSrc =
+          imageMap[num];
+
+
+        /*
+          判斷之前是否已經勾選
+        */
+
+        const markedClass =
+          markedNumbers.includes(num)
+            ? "marked"
+            : "";
+
+
+        html += `
+          <td
+            class="${markedClass}"
+            onclick="markCell(this)"
+            data-num="${num}"
+          >
+
+            <img
+              src="${imgSrc}"
+              alt="圖片 ${num}"
+            >
+
+          </td>
+        `;
+
+
+        index++;
+
+      }
+
+
+      html += "</tr>";
+
+    }
+
+
+    html += "</table>";
+
+
+    document
+      .getElementById("card")
+      .innerHTML = html;
+
+
+    /*
+      網頁重新整理後
+      重新檢查是否已經 BINGO
+    */
+
+    checkBingo();
+
+  }
+
+
+
+  /* =============================
+     點擊格子
+  ============================= */
+
+  function markCell(cell) {
+
+    cell.classList.toggle(
+      "marked"
+    );
+
+
+    /*
+      每次點擊之後
+      儲存目前已勾選的格子
+    */
+
+    saveMarkedCells();
+
+
+    /*
+      檢查 BINGO
+    */
+
+    checkBingo();
+
+  }
+
+
+
+  /* =============================
+     儲存已選取格子
+  ============================= */
+
+  function saveMarkedCells() {
+
+    const markedCells =
+      document.querySelectorAll(
+        "td.marked"
+      );
+
+
+    const markedNumbers =
+      [];
+
+
+    markedCells.forEach(
+      cell => {
+
+        markedNumbers.push(
+          Number(
+            cell.dataset.num
+          )
+        );
+
+      }
+    );
+
+
+    localStorage.setItem(
+      "bingoMarked",
+      JSON.stringify(
+        markedNumbers
+      )
+    );
+
+  }
+
+
+
+  /* =============================
+     檢查是否 BINGO
+  ============================= */
+
+  function checkBingo() {
+
+    const rows =
+      document.querySelectorAll(
+        "table tr"
+      );
+
+
+    let bingo = false;
+
+
+    /*
+      如果表格尚未建立
+      就直接停止
+    */
+
+    if (
+      rows.length === 0
+    ) {
+
+      return;
+
+    }
+
+
+
+    /* =========================
+       檢查橫列
+    ========================= */
+
+    rows.forEach(
+      row => {
+
+        const cells =
+          row.querySelectorAll(
+            "td"
+          );
+
+
+        if (
+          [...cells].every(
+            cell =>
+              cell.classList.contains(
+                "marked"
+              )
+          )
+        ) {
+
+          bingo = true;
+
+        }
+
+      }
+    );
+
+
+
+    /* =========================
+       檢查直行
+    ========================= */
+
+    for (
+      let col = 0;
+      col < 4;
+      col++
+    ) {
+
+      let colMarked =
+        true;
+
+
+      for (
+        let row = 0;
+        row < 4;
+        row++
+      ) {
+
+        const cell =
+          rows[row]
+            .querySelectorAll(
+              "td"
+            )[col];
+
+
+        if (
+          !cell.classList.contains(
+            "marked"
+          )
+        ) {
+
+          colMarked =
+            false;
+
+        }
+
+      }
+
+
+      if (colMarked) {
+
+        bingo = true;
+
+      }
+
+    }
+
+
+
+    /* =========================
+       檢查左上 → 右下
+    ========================= */
+
+    let diag1 =
+      true;
+
+
+    for (
+      let i = 0;
+      i < 4;
+      i++
+    ) {
+
+      if (
+        !rows[i]
+          .querySelectorAll(
+            "td"
+          )[i]
+          .classList
+          .contains(
+            "marked"
+          )
+      ) {
+
+        diag1 =
+          false;
+
+      }
+
+    }
+
+
+
+    /* =========================
+       檢查右上 → 左下
+    ========================= */
+
+    let diag2 =
+      true;
+
+
+    for (
+      let i = 0;
+      i < 4;
+      i++
+    ) {
+
+      if (
+        !rows[i]
+          .querySelectorAll(
+            "td"
+          )[3 - i]
+          .classList
+          .contains(
+            "marked"
+          )
+      ) {
+
+        diag2 =
+          false;
+
+      }
+
+    }
+
+
+    if (
+      diag1 ||
+      diag2
+    ) {
+
+      bingo = true;
+
+    }
+
+
+
+    /* =========================
+       顯示結果
+    ========================= */
+
+    document
+  .getElementById(
+    "status"
+  )
+  .innerHTML =
+
+  bingo
+
+    ? '<div class="bingo-big">BINGO！</div><div class="bingo-small">記得截圖保留得獎資格喔～</div>'
+
+    : "尚未達成 BINGO";
+
+}
+
+
+
+  /* =============================
+     換一張 BINGO 卡
+  ============================= */
+
+  function changeBingoCard() {
+
+    const confirmChange =
+      confirm(
+        "確定要更換一張新的 BINGO 卡嗎？\n目前的卡片與勾選紀錄都會被清除。"
+      );
+
+
+    if (
+      !confirmChange
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+      清除原本卡片
+      和勾選紀錄
+    */
+
+    localStorage.removeItem(
+      "bingoCard"
+    );
+
+
+    localStorage.removeItem(
+      "bingoMarked"
+    );
+
+
+    /*
+      重新產生
+    */
+
+    createNewCard();
+
+
+    /*
+      顯示新卡
+    */
+
+    displayBingoCard();
+
+
+    /*
+      狀態恢復
+    */
+
+    document
+      .getElementById(
+        "status"
+      )
+      .innerText =
+        "尚未達成 BINGO";
+
+  }
+
+
+
+  /* =============================
+     網頁開啟
+  ============================= */
+
+  displayBingoCard();
+
+
+</script>
+
+
+</body>
+</html>
